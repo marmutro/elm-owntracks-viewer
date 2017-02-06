@@ -1,0 +1,23 @@
+<html>
+<head>
+  <title>OwnTracks Viewer</title>
+</head>
+<body>
+<div id="owntracks"></div>
+<script src="https://unpkg.com/mqtt@2.3.0/dist/mqtt.min.js"></script>
+<script src="Main.js"></script>
+<script>
+    var app = Elm.Owntracks.fullscreen();
+
+    app.ports.connect.subscribe(function(url) {
+      var client = mqtt.connect(url);
+      client.subscribe("owntracks/#");
+
+      client.on("message", function (topic, payload) {
+        var arr = [payload];
+        var info = arr.join();
+        app.ports.locationUpdate.send({topic, info});
+      })
+    });
+
+</script>
