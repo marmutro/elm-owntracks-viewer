@@ -7,12 +7,17 @@ import String
 
 
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
         }
+
+
+type alias Flags =
+    { url : String
+    }
 
 
 
@@ -31,9 +36,9 @@ type alias LocationInfo =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( Model "" [], Cmd.none )
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( Model flags.url [], Cmd.none )
 
 
 
@@ -102,7 +107,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ input [ onInput UrlChange ] []
+        [ input [ placeholder model.url, onInput UrlChange ] []
         , button [ onClick Connect ] [ text "Connect" ]
         , div [] (List.map (\info -> div [] [ text (info.topic ++ info.info) ]) model.locations)
         ]

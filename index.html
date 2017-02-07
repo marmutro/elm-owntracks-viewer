@@ -7,15 +7,18 @@
 <script src="https://unpkg.com/mqtt@2.3.0/dist/mqtt.min.js"></script>
 <script src="Main.js"></script>
 <script>
-    var app = Elm.Owntracks.fullscreen();
+    var storageKey = "elm-owntracks";
+    var app = Elm.Owntracks.fullscreen({url: localStorage.getItem(storageKey)});
 
     app.ports.connect.subscribe(function(url) {
       var client = mqtt.connect(url);
+      localStorage.setItem(storageKey, url);
       client.subscribe("owntracks/#");
 
       client.on("message", function (topic, payload) {
         var arr = [payload];
         var info = arr.join();
+        //var info = JSON.stringify(payload);
         app.ports.locationUpdate.send({topic, info});
       })
     });
