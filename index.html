@@ -16,9 +16,7 @@
       client.subscribe("owntracks/#");
 
       client.on("message", function (topic, payload) {
-        var arr = [payload];
-        var info = arr.join();
-        //var info = JSON.stringify(payload);
+        var info = JSON.parse(payload.toString())
         app.ports.locationUpdate.send({topic, info});
       })
     });

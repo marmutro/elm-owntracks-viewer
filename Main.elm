@@ -1,9 +1,10 @@
 port module Owntracks exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (placeholder)
 import Html.Events exposing (..)
-import String
+import Json.Decode exposing (int, bool, string, float, decodeValue, Decoder)
+import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
 
 
 main =
@@ -32,7 +33,7 @@ type alias Model =
 
 type alias LocationInfo =
     { topic : String
-    , info : String
+    , info : Location
     }
 
 
@@ -53,6 +54,9 @@ type Msg
 
 type alias Location =
     { ltype : String
+    , tid : String
+    , conn : String
+    , doze : Bool
     , acc : Int
     , alt : Int
     , batt : Int
@@ -63,13 +67,16 @@ type alias Location =
     , lon : Float
     , rad : Int
     , trig : String
-    , tid : String
     , tst : Int
     , vac : Int
     , vel : Int
     , p : Int
-    , conn : String
     }
+
+
+emptyLocation : Location
+emptyLocation =
+    Location "" "" "" False 0 0 0 0 "" "" 0.0 0.0 0 "" 0 0 0 0
 
 
 port connect : String -> Cmd msg
@@ -92,12 +99,56 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
-port locationUpdate : (LocationInfo -> msg) -> Sub msg
+port locationUpdate : (Json.Decode.Value -> msg) -> Sub msg
+
+
+infoDecoder : Decoder LocationInfo
+infoDecoder =
+    decode LocationInfo
+        |> required "topic" string
+        |> required "info" locationDecoder
+
+
+locationDecoder : Decoder Location
+locationDecoder =
+    decode Location
+        |> required "_type" string
+        |> required "tid" string
+        |> optional "conn" string ""
+        |> required "doze" bool
+        |> required "acc" int
+        |> optional "alt" int 0
+        |> required "batt" int
+        |> optional "cog" int 0
+        |> optional "desc" string ""
+        |> optional "event" string ""
+        |> required "lat" float
+        |> required "lon" float
+        |> optional "rad" int 0
+        |> optional "trig" string ""
+        |> required "tst" int
+        |> optional "vac" int 0
+        |> optional "vel" int 0
+        |> optional "p" int 0
+
+
+fromJson : Json.Decode.Value -> LocationInfo
+fromJson json =
+    let
+        result =
+            decodeValue infoDecoder json
+    in
+        case result of
+            Ok v ->
+                v
+
+            Err e ->
+                LocationInfo e emptyLocation
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    locationUpdate LocationUpdate
+    locationUpdate (\v -> LocationUpdate (fromJson v))
 
 
 
@@ -109,5 +160,5 @@ view model =
     div []
         [ input [ placeholder model.url, onInput UrlChange ] []
         , button [ onClick Connect ] [ text "Connect" ]
-        , div [] (List.map (\info -> div [] [ text (info.topic ++ info.info) ]) model.locations)
+        , div [] (List.map (\info -> div [] [ text (info.topic ++ toString (info.info)) ]) model.locations)
         ]
