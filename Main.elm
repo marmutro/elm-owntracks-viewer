@@ -27,13 +27,13 @@ type alias Flags =
 
 type alias Model =
     { url : String
-    , locations : List LocationInfo
+    , locations : List OwntracksInfo
     }
 
 
-type alias LocationInfo =
+type alias OwntracksInfo =
     { topic : String
-    , info : Location
+    , payload : Location
     }
 
 
@@ -49,7 +49,7 @@ init flags =
 type Msg
     = UrlChange String
     | Connect
-    | LocationUpdate LocationInfo
+    | OwntracksUpdate OwntracksInfo
 
 
 type alias Location =
@@ -91,7 +91,7 @@ update msg model =
         Connect ->
             ( model, connect model.url )
 
-        LocationUpdate newLocation ->
+        OwntracksUpdate newLocation ->
             ( Model model.url (model.locations ++ [ newLocation ]), Cmd.none )
 
 
@@ -99,18 +99,18 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
-port locationUpdate : (Json.Decode.Value -> msg) -> Sub msg
+port owntracksUpdate : (Json.Decode.Value -> msg) -> Sub msg
 
 
-infoDecoder : Decoder LocationInfo
-infoDecoder =
-    decode LocationInfo
+owntracksDecoder : Decoder OwntracksInfo
+owntracksDecoder =
+    decode OwntracksInfo
         |> required "topic" string
-        |> required "info" locationDecoder
+        |> required "payload" payloadDecoder
 
 
-locationDecoder : Decoder Location
-locationDecoder =
+payloadDecoder : Decoder Location
+payloadDecoder =
     decode Location
         |> required "_type" string
         |> required "tid" string
@@ -132,23 +132,23 @@ locationDecoder =
         |> optional "p" int 0
 
 
-fromJson : Json.Decode.Value -> LocationInfo
+fromJson : Json.Decode.Value -> OwntracksInfo
 fromJson json =
     let
         result =
-            decodeValue infoDecoder json
+            decodeValue owntracksDecoder json
     in
         case result of
             Ok v ->
                 v
 
             Err e ->
-                LocationInfo e emptyLocation
+                OwntracksInfo e emptyLocation
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    locationUpdate (\v -> LocationUpdate (fromJson v))
+    owntracksUpdate (\v -> OwntracksUpdate (fromJson v))
 
 
 
@@ -160,5 +160,5 @@ view model =
     div []
         [ input [ placeholder model.url, onInput UrlChange ] []
         , button [ onClick Connect ] [ text "Connect" ]
-        , div [] (List.map (\info -> div [] [ text (info.topic ++ toString (info.info)) ]) model.locations)
+        , div [] (List.map (\info -> div [] [ text (info.topic ++ toString (info.payload)) ]) model.locations)
         ]

@@ -15,9 +15,9 @@
       localStorage.setItem(storageKey, url);
       client.subscribe("owntracks/#");
 
-      client.on("message", function (topic, payload) {
-        var info = JSON.parse(payload.toString())
-        app.ports.locationUpdate.send({topic, info});
+      client.on("message", function (topic, buffer) {
+        var payload = JSON.parse(buffer.toString())
+        app.ports.owntracksUpdate.send({topic, payload});
       })
     });
 
