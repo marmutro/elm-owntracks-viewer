@@ -8,7 +8,11 @@
 <script src="Main.js"></script>
 <script>
     var storageKey = "elm-owntracks";
-    var app = Elm.Owntracks.fullscreen({url: localStorage.getItem(storageKey)});
+    var savedUrl = "";
+    var saved = localStorage.getItem(storageKey);
+    if (saved != null)
+      savedUrl = saved;
+    var app = Elm.Owntracks.fullscreen({url: savedUrl});
 
     app.ports.connect.subscribe(function(url) {
       var client = mqtt.connect(url);
